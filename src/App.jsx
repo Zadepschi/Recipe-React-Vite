@@ -88,9 +88,7 @@ function App() {
           </p>
 
           <h1>
-            What are you
-            <br />
-            cooking today?
+            What are you cooking today?
           </h1>
 
           <p className="heroDescription">
