@@ -72,11 +72,7 @@ function App() {
           Recipe<span>Book</span>
         </div>
 
-        <nav>
-          <a href="#recipes">Recipes</a>
-          <a href="#ingredients">Ingredients</a>
-          <a href="#nutrition">Nutrition</a>
-        </nav>
+      
 
       </header>
 
