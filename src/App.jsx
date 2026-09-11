@@ -1,71 +1,197 @@
-
-import './App.css';
+import "./App.css";
 import { useEffect, useState } from "react";
-import video from "./coverr.mp4"
-import MyRecipesComponent from './MyRecipesComponent';
+import MyRecipesComponent from "./MyRecipesComponent";
 
 function App() {
+  const MY_ID = import.meta.env.VITE_EDAMAM_ID;
+  const MY_KEY = import.meta.env.VITE_EDAMAM_KEY;
 
+  const [mySearch, setMySearch] = useState("");
+  const [myRecipes, setMyRecipes] = useState([]);
+  const [wordSubmitted, setWordSubmitted] = useState("mozzarella");
+  const [error, setError] = useState("");
 
- const MY_ID = "5fcab87b";
- const MY_KEY = "bc13e5a178d10e55d57b39c7f4971070";
+  useEffect(() => {
+    const getRecipes = async () => {
+      if (!MY_ID || !MY_KEY) {
+        setError(
+          "Edamam API credentials are missing. Check your .env file."
+        );
+        return;
+      }
 
- const [mySearch, setMySearch] = useState("");
- const [myRecipes, setMyRecipes] = useState([]);
- const [wordSubmitted, setWordSubmitted] = useState("mozzarella");
+      try {
+        setError("");
 
- useEffect(()=> {
-  const getRecipes = async () => { 
-  const response = await fetch(`https://api.edamam.com/api/recipes/v2?type=public&q=${wordSubmitted}&app_id=${MY_ID}&app_key=${MY_KEY}`);
-  const data = await response.json();
-  setMyRecipes(data.hits)
-   }
-   getRecipes();
- },[wordSubmitted])
+        const response = await fetch(
+          `https://api.edamam.com/api/recipes/v2?type=public&q=${encodeURIComponent(
+            wordSubmitted
+          )}&app_id=${MY_ID}&app_key=${MY_KEY}`
+        );
 
- const myRecipeSearch = (e) => {
-  setMySearch(e.target.value)
- }
+        if (!response.ok) {
+          throw new Error(`API request failed: ${response.status}`);
+        }
 
-const finalSearch = (e) => {
-  e.preventDefault();
-  setWordSubmitted(mySearch);
-}
+        const data = await response.json();
+
+        setMyRecipes(data.hits || []);
+      } catch (err) {
+        console.error(err);
+
+        setMyRecipes([]);
+        setError("Could not load recipes. Please try again.");
+      }
+    };
+
+    getRecipes();
+  }, [wordSubmitted, MY_ID, MY_KEY]);
+
+  const myRecipeSearch = (e) => {
+    setMySearch(e.target.value);
+  };
+
+  const finalSearch = (e) => {
+    e.preventDefault();
+
+    const query = mySearch.trim();
+
+    if (query) {
+      setWordSubmitted(query);
+    }
+  };
 
   return (
     <div className="App">
-       <div className='container'>
-       <video autoPlay muted loop >
-        <source src={video} type="video/mp4" />
-       </video>
-       </div>
-       <h1>Find a Recipe</h1>
 
-       <div className='input'>
-        <form onSubmit={finalSearch}>
-           <input className='search' placeholder='Search...' onChange={myRecipeSearch} value={mySearch}></input>
-       </form>
+      {/* HEADER */}
 
-       <div>
-          <button onClick={finalSearch}><img src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSBlATWVFDlJgeeB_DFgfyOxg8CF9A1aCL4uqWxvK8g1imgxVNMXCbKE7UvBsRVkbFtyuo&usqp=CAU' className='icon' alt='icon' /></button>
-       </div>
-       </div>
-       
-       <div>
-       {myRecipes.map((element, index) => (
-        <MyRecipesComponent  key={index}
-        label={element.recipe.label} 
-        calories={element.recipe.calories} 
-        mealType={element.recipe.mealType}
-        images={element.recipe.image} 
-        dietLabels={element.recipe.dietLabels} 
-        ingredients={element.recipe.ingredientLines}
-        fat={element.recipe.totalNutrients.FAT.quantity}
-        weight={element.recipe.totalWeight}
-        protein={element.recipe.totalNutrients.PROCNT.quantity}
-        carbohydrates={element.recipe.totalNutrients.CHOCDF.quantity} />
-       ))}
-       </div>
+      <header className="header">
+
+        <div className="logo">
+          Recipe<span>Book</span>
+        </div>
+
+        <nav>
+          <a href="#recipes">Recipes</a>
+          <a href="#ingredients">Ingredients</a>
+          <a href="#nutrition">Nutrition</a>
+        </nav>
+
+      </header>
+
+
+      {/* HERO */}
+
+      <section className="hero">
+
+        <div className="heroText">
+
+          <p className="eyebrow">
+            FIND YOUR NEXT FAVORITE
+          </p>
+
+          <h1>
+            What are you
+            <br />
+            cooking today?
+          </h1>
+
+          <p className="heroDescription">
+            Discover delicious recipes based on the ingredients
+            you already have.
+          </p>
+
+
+          {/* SEARCH */}
+
+          <form
+            className="searchForm"
+            onSubmit={finalSearch}
+          >
+
+            <input
+              className="search"
+              type="text"
+              placeholder="Search recipes..."
+              onChange={myRecipeSearch}
+              value={mySearch}
+              aria-label="Search recipes"
+            />
+
+            <button
+              type="submit"
+              className="searchButton"
+            >
+              Search
+            </button>
+
+          </form>
+
+        </div>
+
+      </section>
+
+
+      {/* RECIPES */}
+
+      <main
+        id="recipes"
+        className="recipes"
+      >
+
+        {error && (
+          <p className="errorMessage">
+            {error}
+          </p>
+        )}
+
+
+        {!error && myRecipes.length === 0 && (
+          <p className="emptyMessage">
+            No recipes found.
+          </p>
+        )}
+
+
+        {myRecipes.map((element, index) => {
+
+          const recipe = element.recipe;
+
+          return (
+            <MyRecipesComponent
+              key={recipe.uri || index}
+
+              label={recipe.label}
+
+              calories={recipe.calories}
+
+              mealType={recipe.mealType}
+
+              images={recipe.image}
+
+              dietLabels={recipe.dietLabels}
+
+              ingredients={recipe.ingredientLines}
+
+              fat={
+                recipe.totalNutrients?.FAT?.quantity || 0
+              }
+
+              weight={recipe.totalWeight}
+
+              protein={
+                recipe.totalNutrients?.PROCNT?.quantity || 0
+              }
+
+              carbohydrates={
+                recipe.totalNutrients?.CHOCDF?.quantity || 0
+              }
+            />
+          );
+        })}
+
+      </main>
 
     </div>
   );
